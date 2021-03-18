@@ -11,7 +11,3 @@ func (t bracket) evaluate(f Resolver, q queue) (token, error) {
 func (t bracket) value() (Valuer, error) {
 	return nil, fmt.Errorf("FIXME") // FIXME
 }
-
-func (t bracket) String() string {
-	return fmt.Sprintf("bracket[%v]", byte(t))
-}

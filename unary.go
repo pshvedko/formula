@@ -10,7 +10,7 @@ func (t unary) evaluate(f Resolver, q queue) (token, error) {
 	case calculator:
 		switch t {
 		case '-':
-			return v.Invert()
+			return v.invert()
 		case '+':
 			return a, nil
 		}
@@ -20,8 +20,4 @@ func (t unary) evaluate(f Resolver, q queue) (token, error) {
 
 func (t unary) value() (Valuer, error) {
 	return nil, fmt.Errorf("FIXME") // FIXME
-}
-
-func (t unary) String() string {
-	return fmt.Sprintf("unary[%c]", rune(t))
 }

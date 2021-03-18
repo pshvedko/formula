@@ -44,7 +44,3 @@ func (t function) evaluate(e Resolver, q queue) (token, error) {
 func (t function) value() (Valuer, error) {
 	return nil, fmt.Errorf("FIXME") // FIXME
 }
-
-func (t function) String() string {
-	return fmt.Sprintf("function[%v]", string(t))
-}

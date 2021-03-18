@@ -25,6 +25,14 @@ type token interface {
 	value() (Valuer, error)
 }
 
+type calculator interface {
+	plus(token) (token, error)
+	minus(token) (token, error)
+	divide(token) (token, error)
+	multiply(token) (token, error)
+	invert() (token, error)
+}
+
 type queue []token
 
 func (s *queue) pop() token {

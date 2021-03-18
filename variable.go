@@ -26,10 +26,6 @@ func (t variable) evaluate(f Resolver, q queue) (token, error) {
 	}
 }
 
-func (t variable) String() string {
-	return fmt.Sprintf("variable[%v]", string(t))
-}
-
 func (t variable) value() (Valuer, error) {
 	return nil, fmt.Errorf("FIXME") // FIXME
 }

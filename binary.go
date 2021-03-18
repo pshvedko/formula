@@ -2,14 +2,6 @@ package formula
 
 import "fmt"
 
-type calculator interface {
-	Plus(token) (token, error)
-	Minus(token) (token, error)
-	Divide(token) (token, error)
-	Multiply(token) (token, error)
-	Invert() (token, error)
-}
-
 type binary rune
 
 func (t binary) evaluate(_ Resolver, q queue) (token, error) {
@@ -19,13 +11,13 @@ func (t binary) evaluate(_ Resolver, q queue) (token, error) {
 	case calculator:
 		switch t {
 		case '+':
-			return c.Plus(b)
+			return c.plus(b)
 		case '-':
-			return c.Minus(b)
+			return c.minus(b)
 		case '*':
-			return c.Multiply(b)
+			return c.multiply(b)
 		case '/':
-			return c.Divide(b)
+			return c.divide(b)
 		}
 	}
 	return nil, fmt.Errorf("FIXME") // FIXME
@@ -45,8 +37,4 @@ func (t binary) less(a rune) bool {
 		return false
 	}
 	return true
-}
-
-func (t binary) String() string {
-	return fmt.Sprintf("binary[%c]", rune(t))
 }
