@@ -48,7 +48,7 @@ func (t number) invert() (token, error) {
 	return -t, nil
 }
 
-func (t number) evaluate(Resolver, queue) (token, error) {
+func (t number) evaluate(Resolver, stacker) (token, error) {
 	return t, nil
 }
 

@@ -4,7 +4,7 @@ import "fmt"
 
 type unary binary
 
-func (t unary) evaluate(f Resolver, q queue) (token, error) {
+func (t unary) evaluate(_ Resolver, q stacker) (token, error) {
 	a := q.pop()
 	switch v := a.(type) {
 	case calculator:

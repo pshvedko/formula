@@ -48,7 +48,7 @@ func (t decimal) invert() (token, error) {
 	return -t, nil
 }
 
-func (t decimal) evaluate(Resolver, queue) (token, error) {
+func (t decimal) evaluate(Resolver, stacker) (token, error) {
 	return t, nil
 }
 

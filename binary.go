@@ -2,9 +2,9 @@ package formula
 
 import "fmt"
 
-type binary rune
+type binary byte
 
-func (t binary) evaluate(_ Resolver, q queue) (token, error) {
+func (t binary) evaluate(_ Resolver, q stacker) (token, error) {
 	b := q.pop()
 	a := q.pop()
 	switch c := a.(type) {

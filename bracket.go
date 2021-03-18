@@ -4,7 +4,7 @@ import "fmt"
 
 type bracket byte
 
-func (t bracket) evaluate(f Resolver, q queue) (token, error) {
+func (t bracket) evaluate(Resolver, stacker) (token, error) {
 	return nil, fmt.Errorf("FIXME") // FIXME
 }
 

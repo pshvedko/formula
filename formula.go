@@ -12,7 +12,7 @@ type Evaluator interface {
 }
 
 type Resolver interface {
-	Resolve(string) interface{}
+	Resolve(string) (interface{}, bool)
 }
 
 type Valuer interface {
@@ -20,8 +20,13 @@ type Valuer interface {
 	Int64() int64
 }
 
+type stacker interface {
+	pop() token
+	push(token)
+}
+
 type token interface {
-	evaluate(Resolver, queue) (token, error)
+	evaluate(Resolver, stacker) (token, error)
 	value() (Valuer, error)
 }
 
@@ -35,30 +40,37 @@ type calculator interface {
 
 type queue []token
 
-func (s *queue) pop() token {
-	n := len(*s)
+func (q *queue) pop() token {
+	n := len(*q)
 	n--
-	e := (*s)[n]
-	*s = (*s)[:n]
+	e := (*q)[n]
+	*q = (*q)[:n]
 	return e
 }
 
-func (s *queue) push(t token) {
-	*s = append(*s, t)
+func (q *queue) push(t token) {
+	*q = append(*q, t)
 }
 
 type formula []token
 
 func (f formula) Evaluate(r Resolver) (Valuer, error) {
-	q := queue{}
+	var q queue
 	for _, t := range f {
-		v, err := t.evaluate(r, q)
+		v, err := t.evaluate(r, &q)
 		if err != nil {
 			return nil, err
 		}
 		q.push(v)
 	}
 	return q.pop().value()
+}
+
+type Bind map[string]interface{}
+
+func (m Bind) Resolve(n string) (v interface{}, ok bool) {
+	v, ok = m[n]
+	return
 }
 
 func New(e string) (Evaluator, error) {
