@@ -49,7 +49,7 @@ func (t decimal) invert() (token, error) {
 }
 
 func (t decimal) evaluate(Resolver, queue) (token, error) {
-	return nil, fmt.Errorf("FIXME") // FIXME
+	return t, nil
 }
 
 func (t decimal) value() (Valuer, error) {
