@@ -37,8 +37,14 @@ func (t decimal) multiply(a token) (token, error) {
 func (t decimal) divide(a token) (token, error) {
 	switch v := a.(type) {
 	case number:
+		if v == 0 {
+			break
+		}
 		return number(t) / v, nil
 	case decimal:
+		if v == 0 {
+			break
+		}
 		return t / v, nil
 	}
 	return nil, fmt.Errorf("FIXME") // FIXME
