@@ -2,9 +2,23 @@ package formula
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"text/scanner"
+)
+
+var (
+	ErrFewOperands    = fmt.Errorf("few operands")
+	ErrUnaryOperator  = fmt.Errorf("illegal unary operator")
+	ErrBinaryOperator = fmt.Errorf("illegal binary operator")
+	ErrUnopenedComma  = fmt.Errorf("missing comma or opening bracket")
+	ErrUnopened       = fmt.Errorf("missing opening bracket")
+	ErrIllegalToken   = fmt.Errorf("illegal token")
+	ErrUnclosed       = fmt.Errorf("missing closing bracket")
+	ErrUndefinedFunc  = fmt.Errorf("undefined function")
+	ErrUndefinedVar   = fmt.Errorf("undefined variable")
+	ErrDivisionByZero = fmt.Errorf("division by zero")
 )
 
 type Evaluator interface {
@@ -21,7 +35,7 @@ type Valuer interface {
 }
 
 type stacker interface {
-	pop() token
+	pop() (token, bool)
 	push(token)
 }
 
@@ -40,12 +54,15 @@ type calculator interface {
 
 type queue []token
 
-func (q *queue) pop() token {
+func (q *queue) pop() (token, bool) {
 	n := len(*q)
+	if n == 0 {
+		return nil, false
+	}
 	n--
 	e := (*q)[n]
 	*q = (*q)[:n]
-	return e
+	return e, true
 }
 
 func (q *queue) push(t token) {
@@ -53,6 +70,38 @@ func (q *queue) push(t token) {
 }
 
 type formula []token
+
+func (f formula) validate(r Resolver) (Evaluator, error) {
+	var q formula
+	for _, t := range f {
+		switch t.(type) {
+		case unary:
+			t = unary('+')
+		case binary:
+			t = binary('*')
+		case decimal:
+			t = decimal(1)
+		case number:
+			t = number(1)
+		case function:
+		case variable:
+		default:
+			return nil, ErrIllegalToken
+		}
+		q = append(q, t)
+	}
+	if len(q) == 0 {
+		return nil, ErrFewOperands
+	}
+	v, err := q.Evaluate(r)
+	if err != nil {
+		return nil, err
+	}
+	if v.Float64() != 1 {
+		return nil, ErrIllegalToken
+	}
+	return f, nil
+}
 
 func (f formula) Evaluate(r Resolver) (Valuer, error) {
 	var q queue
@@ -63,7 +112,11 @@ func (f formula) Evaluate(r Resolver) (Valuer, error) {
 		}
 		q.push(v)
 	}
-	return q.pop().value()
+	v, ok := q.pop()
+	if !ok {
+		return nil, ErrFewOperands
+	}
+	return v.value()
 }
 
 type Bind map[string]interface{}
@@ -74,10 +127,12 @@ func (m Bind) Resolve(n string) (v interface{}, ok bool) {
 }
 
 func New(e string) (Evaluator, error) {
+	m := Bind{}
 	s := scanner.Scanner{}
 	s.Init(strings.NewReader(e))
 	var p, q queue
-	var u int
+	var d, b []int
+	var u, f int
 	var t rune = scanner.Comment
 	var w string
 	for {
@@ -99,9 +154,13 @@ func New(e string) (Evaluator, error) {
 			u++
 			t = s.Scan()
 			if t == '(' {
+				d = append(d, len(q))
+				b = append(b, 0)
 				p.push(function(w))
+				f++
 			} else {
 				q.push(variable(w))
+				m[w] = 1
 			}
 			w = s.TokenText()
 			continue
@@ -129,14 +188,14 @@ func New(e string) (Evaluator, error) {
 				case '+', '-':
 					p.push(unary(t))
 				default:
-					return nil, fmt.Errorf("illegal unary operator %c", t)
+					return nil, ErrUnaryOperator
 				}
 			} else {
 				switch t {
 				case '+', '-', '/', '*':
 					p.push(binary(t))
 				default:
-					return nil, fmt.Errorf("illegal binary operator %c", t)
+					return nil, ErrBinaryOperator
 				}
 			}
 			u = 0
@@ -144,7 +203,7 @@ func New(e string) (Evaluator, error) {
 			n := len(p)
 			for {
 				if n == 0 {
-					return nil, fmt.Errorf("missing comma or opening bracket")
+					return nil, ErrUnopenedComma
 				} else {
 					n--
 				}
@@ -159,6 +218,7 @@ func New(e string) (Evaluator, error) {
 			}
 			p = p[:n]
 			u = 0
+			b[f-1]++
 		case '(':
 			p.push(bracket(t))
 			u = 0
@@ -166,22 +226,35 @@ func New(e string) (Evaluator, error) {
 			n := len(p)
 			for {
 				if n == 0 {
-					return nil, fmt.Errorf("missing opening bracket")
-				} else {
-					n--
+					return nil, ErrUnopened
 				}
+				n--
 				switch v := p[n].(type) {
 				case bracket:
 				case binary, unary:
 					q.push(v)
 					continue
 				default:
-					return nil, fmt.Errorf("illegal token %v", v)
+					return nil, ErrIllegalToken
 				}
 				break
 			}
 			if n > 0 {
 				if v, ok := p[n-1].(function); ok {
+					f--
+					if d[f] < len(q) {
+						b[f]++
+					}
+					o := make([]reflect.Type, b[f])
+					for i := range o {
+						o[i] = reflect.TypeOf(0)
+					}
+					m[string(v)] = reflect.MakeFunc(reflect.FuncOf(o, []reflect.Type{reflect.TypeOf(0)}, false),
+						func(i []reflect.Value) []reflect.Value {
+							return []reflect.Value{reflect.ValueOf(1)}
+						}).Interface()
+					d = d[:f]
+					b = b[:f]
 					q.push(v)
 					n--
 				}
@@ -195,14 +268,14 @@ func New(e string) (Evaluator, error) {
 				case binary, unary:
 					q.push(v)
 				case bracket:
-					return nil, fmt.Errorf("missing closing bracket")
+					return nil, ErrUnclosed
 				default:
-					return nil, fmt.Errorf("illegal token %v", v)
+					return nil, ErrIllegalToken
 				}
 			}
-			return formula(q), nil
+			return formula(q).validate(m)
 		default:
-			return nil, fmt.Errorf("illegal token %v", scanner.TokenString(t))
+			return nil, ErrIllegalToken
 		}
 		u++
 		t = s.Scan()

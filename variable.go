@@ -7,7 +7,7 @@ type variable string
 func (t variable) evaluate(f Resolver, _ stacker) (token, error) {
 	r, ok := f.Resolve(string(t))
 	if !ok {
-		return nil, fmt.Errorf("FIXME") // FIXME
+		return nil, ErrUndefinedVar
 	}
 	switch v := r.(type) {
 	case int:
@@ -25,10 +25,10 @@ func (t variable) evaluate(f Resolver, _ stacker) (token, error) {
 	case float64:
 		return number(v), nil
 	default:
-		return nil, fmt.Errorf("FIXME") // FIXME
+		return nil, fmt.Errorf("FIXME44") // FIXME
 	}
 }
 
 func (t variable) value() (Valuer, error) {
-	return nil, fmt.Errorf("FIXME") // FIXME
+	return nil, fmt.Errorf("FIXME45") // FIXME
 }

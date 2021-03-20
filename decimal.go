@@ -11,7 +11,7 @@ func (t decimal) plus(a token) (token, error) {
 	case decimal:
 		return t + v, nil
 	}
-	return nil, fmt.Errorf("FIXME") // FIXME
+	return nil, fmt.Errorf("FIXME9") // FIXME
 }
 
 func (t decimal) minus(a token) (token, error) {
@@ -21,7 +21,7 @@ func (t decimal) minus(a token) (token, error) {
 	case decimal:
 		return t - v, nil
 	}
-	return nil, fmt.Errorf("FIXME") // FIXME
+	return nil, fmt.Errorf("FIXME11") // FIXME
 }
 
 func (t decimal) multiply(a token) (token, error) {
@@ -31,23 +31,23 @@ func (t decimal) multiply(a token) (token, error) {
 	case decimal:
 		return t * v, nil
 	}
-	return nil, fmt.Errorf("FIXME") // FIXME
+	return nil, fmt.Errorf("FIXME12") // FIXME
 }
 
 func (t decimal) divide(a token) (token, error) {
 	switch v := a.(type) {
 	case number:
 		if v == 0 {
-			break
+			return nil, ErrDivisionByZero
 		}
 		return number(t) / v, nil
 	case decimal:
 		if v == 0 {
-			break
+			return nil, ErrDivisionByZero
 		}
 		return t / v, nil
 	}
-	return nil, fmt.Errorf("FIXME") // FIXME
+	return nil, fmt.Errorf("FIXME12 %v", a) // FIXME
 }
 
 func (t decimal) invert() (token, error) {

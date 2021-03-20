@@ -5,8 +5,16 @@ import "fmt"
 type binary byte
 
 func (t binary) evaluate(_ Resolver, q stacker) (token, error) {
-	b := q.pop()
-	a := q.pop()
+	var a, b token
+	var ok bool
+	b, ok = q.pop()
+	if !ok {
+		return nil, ErrFewOperands
+	}
+	a, ok = q.pop()
+	if !ok {
+		return nil, ErrFewOperands
+	}
 	switch c := a.(type) {
 	case calculator:
 		switch t {
@@ -20,11 +28,11 @@ func (t binary) evaluate(_ Resolver, q stacker) (token, error) {
 			return c.divide(b)
 		}
 	}
-	return nil, fmt.Errorf("FIXME") // FIXME
+	return nil, fmt.Errorf("FIXME5") // FIXME
 }
 
 func (t binary) value() (Valuer, error) {
-	return nil, fmt.Errorf("FIXME") // FIXME
+	return nil, fmt.Errorf("FIXME6") // FIXME
 }
 
 func (t binary) less(a rune) bool {
@@ -37,4 +45,8 @@ func (t binary) less(a rune) bool {
 		return false
 	}
 	return true
+}
+
+func (t binary) GoString() string {
+	return string(t)
 }

@@ -19,7 +19,48 @@ func TestNew(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
-		{},
+		{
+			name:    "Empty",
+			args:    args{},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Empty",
+			args:    args{"+"},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Few",
+			args:    args{"1*"},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Few",
+			args:    args{"(1+2/3)*"},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Few",
+			args:    args{"1*Pow(2,,1+Pi())"},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Few",
+			args:    args{"1*Pow(2,2+)"},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "Few",
+			args:    args{"x/"},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -29,7 +70,7 @@ func TestNew(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() got = %v, want %v", got, tt.want)
+				t.Errorf("New() got = %+#v, want %+#v", got, tt.want)
 			}
 		})
 	}
