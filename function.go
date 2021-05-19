@@ -1,14 +1,15 @@
 package formula
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 )
 
 type function string
 
-func (t function) evaluate(e Resolver, q stacker) (token, error) {
-	f, ok := e.Resolve(string(t))
+func (t function) evaluate(e Getter, q stacker) (token, error) {
+	f, ok := e.Get(string(t))
 	if !ok {
 		return nil, ErrUndefinedFunc
 	}
@@ -51,4 +52,12 @@ func (t function) evaluate(e Resolver, q stacker) (token, error) {
 
 func (t function) value() (Valuer, error) {
 	return nil, fmt.Errorf("FIXME1") // FIXME
+}
+
+func (t function) MarshalJSON() ([]byte, error) {
+	return json.Marshal(Token{Type: "function", Value: t.String()})
+}
+
+func (t function) String() string {
+	return string(t)
 }

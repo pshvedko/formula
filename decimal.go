@@ -1,6 +1,9 @@
 package formula
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type decimal int64
 
@@ -54,7 +57,7 @@ func (t decimal) invert() (token, error) {
 	return -t, nil
 }
 
-func (t decimal) evaluate(Resolver, stacker) (token, error) {
+func (t decimal) evaluate(Getter, stacker) (token, error) {
 	return t, nil
 }
 
@@ -68,4 +71,12 @@ func (t decimal) Float64() float64 {
 
 func (t decimal) Int64() int64 {
 	return int64(t)
+}
+
+func (t decimal) MarshalJSON() ([]byte, error) {
+	return json.Marshal(Token{Type: "decimal", Value: t.String()})
+}
+
+func (t decimal) String() string {
+	return fmt.Sprint(t.Int64())
 }

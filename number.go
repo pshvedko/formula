@@ -1,6 +1,9 @@
 package formula
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type number float64
 
@@ -54,7 +57,7 @@ func (t number) invert() (token, error) {
 	return -t, nil
 }
 
-func (t number) evaluate(Resolver, stacker) (token, error) {
+func (t number) evaluate(Getter, stacker) (token, error) {
 	return t, nil
 }
 
@@ -68,4 +71,12 @@ func (t number) Float64() float64 {
 
 func (t number) Int64() int64 {
 	return int64(t)
+}
+
+func (t number) MarshalJSON() ([]byte, error) {
+	return json.Marshal(Token{Type: "number", Value: t.String()})
+}
+
+func (t number) String() string {
+	return fmt.Sprint(t.Float64())
 }

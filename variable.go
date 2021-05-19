@@ -1,11 +1,14 @@
 package formula
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type variable string
 
-func (t variable) evaluate(f Resolver, _ stacker) (token, error) {
-	r, ok := f.Resolve(string(t))
+func (t variable) evaluate(f Getter, _ stacker) (token, error) {
+	r, ok := f.Get(string(t))
 	if !ok {
 		return nil, ErrUndefinedVar
 	}
@@ -31,4 +34,12 @@ func (t variable) evaluate(f Resolver, _ stacker) (token, error) {
 
 func (t variable) value() (Valuer, error) {
 	return nil, fmt.Errorf("FIXME45") // FIXME
+}
+
+func (t variable) MarshalJSON() ([]byte, error) {
+	return json.Marshal(Token{Type: "variable", Value: t.String()})
+}
+
+func (t variable) String() string {
+	return string(t)
 }

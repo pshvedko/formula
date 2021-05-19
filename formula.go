@@ -1,7 +1,9 @@
 package formula
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
@@ -22,11 +24,11 @@ var (
 )
 
 type Evaluator interface {
-	Evaluate(r Resolver) (Valuer, error)
+	Evaluate(r Getter) (Valuer, error)
 }
 
-type Resolver interface {
-	Resolve(string) (interface{}, bool)
+type Getter interface {
+	Get(string) (interface{}, bool)
 }
 
 type Valuer interface {
@@ -40,8 +42,47 @@ type stacker interface {
 }
 
 type token interface {
-	evaluate(Resolver, stacker) (token, error)
+	evaluate(Getter, stacker) (token, error)
 	value() (Valuer, error)
+}
+
+type Token struct {
+	Type  string `json:"type,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+
+func (t Token) tokenize() token {
+	switch t.Type {
+	case "decimal":
+		v, err := strconv.ParseInt(t.Value, 10, 64)
+		if err != nil {
+			return nil
+		}
+		return decimal(v)
+	case "number":
+		v, err := strconv.ParseFloat(t.Value, 64)
+		if err != nil {
+			return nil
+		}
+		return number(v)
+	case "function":
+		return function(t.Value)
+	case "variable":
+		return variable(t.Value)
+	case "unary":
+		switch t.Value[0] {
+		case '+', '-':
+			return unary(t.Value[0])
+		}
+	case "binary":
+		switch t.Value[0] {
+		case '+', '-', '*', '/':
+			return binary(t.Value[0])
+		}
+	default:
+	}
+	panic(t)
+	return nil
 }
 
 type calculator interface {
@@ -69,9 +110,9 @@ func (q *queue) push(t token) {
 	*q = append(*q, t)
 }
 
-type formula []token
+type formula queue
 
-func (f formula) validate(r Resolver) (Evaluator, error) {
+func (f formula) validate(r Getter) (Evaluator, error) {
 	var q formula
 	for _, t := range f {
 		switch t.(type) {
@@ -103,7 +144,7 @@ func (f formula) validate(r Resolver) (Evaluator, error) {
 	return f, nil
 }
 
-func (f formula) Evaluate(r Resolver) (Valuer, error) {
+func (f formula) Evaluate(r Getter) (Valuer, error) {
 	var q queue
 	for _, t := range f {
 		v, err := t.evaluate(r, &q)
@@ -121,7 +162,7 @@ func (f formula) Evaluate(r Resolver) (Valuer, error) {
 
 type Bind map[string]interface{}
 
-func (m Bind) Resolve(n string) (v interface{}, ok bool) {
+func (m Bind) Get(n string) (v interface{}, ok bool) {
 	v, ok = m[n]
 	return
 }
@@ -281,4 +322,21 @@ func New(e string) (Evaluator, error) {
 		t = s.Scan()
 		w = s.TokenText()
 	}
+}
+
+func UnmarshalJSON(b []byte) (Evaluator, error) {
+	var t []Token
+	err := json.Unmarshal(b, &t)
+	if err != nil {
+		return nil, err
+	}
+	var q queue
+	for _, j := range t {
+		v := j.tokenize()
+		if v == nil {
+			return nil, io.EOF
+		}
+		q = append(q, v)
+	}
+	return formula(q), nil
 }

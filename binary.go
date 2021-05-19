@@ -1,10 +1,13 @@
 package formula
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type binary byte
 
-func (t binary) evaluate(_ Resolver, q stacker) (token, error) {
+func (t binary) evaluate(_ Getter, q stacker) (token, error) {
 	var a, b token
 	var ok bool
 	b, ok = q.pop()
@@ -47,6 +50,10 @@ func (t binary) less(a rune) bool {
 	return true
 }
 
-func (t binary) GoString() string {
+func (t binary) String() string {
 	return string(t)
+}
+
+func (t binary) MarshalJSON() ([]byte, error) {
+	return json.Marshal(Token{Type: "binary", Value: t.String()})
 }

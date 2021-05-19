@@ -1,10 +1,13 @@
 package formula
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type unary binary
 
-func (t unary) evaluate(_ Resolver, q stacker) (token, error) {
+func (t unary) evaluate(_ Getter, q stacker) (token, error) {
 	a, ok := q.pop()
 	if !ok {
 		return nil, ErrFewOperands
@@ -25,6 +28,10 @@ func (t unary) value() (Valuer, error) {
 	return nil, fmt.Errorf("FIXME34") // FIXME
 }
 
-func (t unary) GoString() string {
+func (t unary) String() string {
 	return string(t)
+}
+
+func (t unary) MarshalJSON() ([]byte, error) {
+	return json.Marshal(Token{Type: "unary", Value: t.String()})
 }

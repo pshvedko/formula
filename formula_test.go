@@ -1,6 +1,7 @@
 package formula
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -81,11 +82,23 @@ func ExampleNew() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	v, err := f.Evaluate(Bind{"Sin": math.Sin, "Pi": math.Pi, "x": .25})
+	b, err := json.Marshal(f)
 	if err != nil {
 		log.Fatal(err)
 	}
+	j, err := UnmarshalJSON(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+	v, err := j.Evaluate(Bind{"Sin": math.Sin, "Pi": math.Pi, "x": .25})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(f)
+	fmt.Println(j)
 	fmt.Println(v)
 	// Output:
+	// [1.5 - 2 Pi * x * Sin 2 / + 2 +]
+	// [1.5 - 2 Pi * x * Sin 2 / + 2 +]
 	// 1
 }
