@@ -98,16 +98,18 @@ func (f Formula) Evaluate(r Getter) (interface{}, error) {
 	if !ok {
 		return nil, ErrFewOperands
 	}
-	switch v.(type) {
-	case decimal, number:
-		return v, nil
+	switch v := v.(type) {
+	case decimal:
+		return int64(v), nil
+	case number:
+		return float64(v), nil
 	}
 	return nil, ErrIllegalToken
 }
 
-type Variable map[string]interface{}
+type Bind map[string]interface{}
 
-func (m Variable) Get(n string) (v interface{}, ok bool) {
+func (m Bind) Get(n string) (v interface{}, ok bool) {
 	v, ok = m[n]
 	return
 }

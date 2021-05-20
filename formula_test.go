@@ -170,7 +170,7 @@ func ExampleNew() {
 		log.Fatal(err)
 	}
 	var v interface{}
-	v, err = j.Evaluate(Variable{"Sin'": math.Sin, "Pi": math.Pi, "x": .25})
+	v, err = j.Evaluate(Bind{"Sin'": math.Sin, "Pi": math.Pi, "x": .25})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -181,4 +181,44 @@ func ExampleNew() {
 	// [1 2 Pi * x * Sin' 2 / +]
 	// [1 2 Pi * x * Sin' 2 / +]
 	// 1.5
+}
+
+func BenchmarkNew(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := New("1+A(y,B(3*C()/2-D(x*x)))")
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkFormula_Evaluate(b *testing.B) {
+	formula := Formula{
+		decimal(1), variable("y"),
+		decimal(3), function("C"), binary(0x2a),
+		decimal(2), binary(0x2f), variable("x"),
+		variable("x"), binary(0x2a),
+		function("D'"), binary(0x2d),
+		function("B'"), function("A''"), binary(0x2b)}
+	bind := Bind{
+		"x":   3,
+		"y":   2,
+		"A''": func(int, int) int { return 1 },
+		"B'":  func(float64) float64 { return 1 },
+		"C":   func() int64 { return 1 },
+		"D'":  func(int64) int64 { return 1 },
+	}
+	for i := 0; i < b.N; i++ {
+		result, err := formula.Evaluate(bind)
+		if err != nil {
+			b.Error(err)
+		}
+		switch v := result.(type) {
+		case int64:
+			if v == 2 {
+				continue
+			}
+		}
+		b.Errorf("wrong result %v", result)
+	}
 }
