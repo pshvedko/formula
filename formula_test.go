@@ -141,12 +141,7 @@ func ExampleNew() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	v, err := j.Evaluate(Bind{
-		"Pow''": math.Pow,
-		"Sin'":  math.Sin,
-		"Rand":  rand.Float64,
-		"Pi":    math.Pi,
-		"x":     .25})
+	v, err := j.Evaluate(Bind{"Pow''": math.Pow, "Sin'": math.Sin, "Rand": rand.Float64, "Pi": math.Pi, "x": .25})
 	if err != nil {
 		log.Fatal(err)
 	}
