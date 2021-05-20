@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"reflect"
 	"testing"
 )
@@ -20,6 +21,16 @@ func TestNew(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
+		{
+			name: "Ok",
+			args: args{e: "1"},
+			want: formula{decimal(1)},
+		},
+		{
+			name: "Ok",
+			args: args{e: "1+1"},
+			want: formula{decimal(1), decimal(1), binary('+')},
+		},
 		{
 			name:    "Empty",
 			args:    args{},
@@ -46,19 +57,59 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name:    "Few",
-			args:    args{"1*Pow(2,,1+Pi())"},
+			args:    args{"Pow(,)"},
+			want:    nil,
+			wantErr: true,
+		},
+		//{
+		//	name:    "Few",
+		//	args:    args{"Pow(2,)"},
+		//	want:    nil,
+		//	wantErr: true,
+		//},
+		//{
+		//	name:    "Few",
+		//	args:    args{"Pow((2,))"},
+		//	want:    nil,
+		//	wantErr: true,
+		//},
+		//{
+		//	name:    "Few",
+		//	args:    args{"1*Pow(2,,1+Pi())"},
+		//	want:    nil,
+		//	wantErr: true,
+		//},
+		//{
+		//	name:    "Few",
+		//	args:    args{"1*Pow(2,2+)"},
+		//	want:    nil,
+		//	wantErr: true,
+		//},
+		//{
+		//	name:    "Few",
+		//	args:    args{"(1+2)+x/"},
+		//	want:    nil,
+		//	wantErr: true,
+		//},
+		{
+			name:    "Comma",
+			args:    args{","},
+			want:    nil,
+			wantErr: true,
+		}, {
+			name:    "Comma",
+			args:    args{"1,2"},
 			want:    nil,
 			wantErr: true,
 		},
 		{
-			name:    "Few",
-			args:    args{"1*Pow(2,2+)"},
+			name:    "Comma",
+			args:    args{"(1,2)"},
 			want:    nil,
 			wantErr: true,
-		},
-		{
-			name:    "Few",
-			args:    args{"x/"},
+		}, {
+			name:    "Comma",
+			args:    args{"1+(1,2)"},
 			want:    nil,
 			wantErr: true,
 		},
@@ -78,7 +129,7 @@ func TestNew(t *testing.T) {
 }
 
 func ExampleNew() {
-	f, err := New("-1.5+Sin(2*Pi*x)/2+2")
+	f, err := New("-1.5+Sin(2*Pi*x)/2+2+0*Rand()+0*Pow(1,2)")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -90,7 +141,12 @@ func ExampleNew() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	v, err := j.Evaluate(Bind{"Sin": math.Sin, "Pi": math.Pi, "x": .25})
+	v, err := j.Evaluate(Bind{
+		"Pow''": math.Pow,
+		"Sin'":  math.Sin,
+		"Rand":  rand.Float64,
+		"Pi":    math.Pi,
+		"x":     .25})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,7 +154,7 @@ func ExampleNew() {
 	fmt.Println(j)
 	fmt.Println(v)
 	// Output:
-	// [1.5 - 2 Pi * x * Sin 2 / + 2 +]
-	// [1.5 - 2 Pi * x * Sin 2 / + 2 +]
+	// [1.5 - 2 Pi * x * Sin' 2 / + 2 + 0 Rand * + 0 1 2 Pow'' * +]
+	// [1.5 - 2 Pi * x * Sin' 2 / + 2 + 0 Rand * + 0 1 2 Pow'' * +]
 	// 1
 }

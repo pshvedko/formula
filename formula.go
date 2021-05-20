@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"reflect"
 	"strconv"
 	"strings"
 	"text/scanner"
@@ -101,45 +100,36 @@ func (q *queue) pop() (token, bool) {
 		return nil, false
 	}
 	n--
-	e := (*q)[n]
-	*q = (*q)[:n]
-	return e, true
+	defer q.len(n)
+	return (*q)[n], true
 }
 
 func (q *queue) push(t token) {
 	*q = append(*q, t)
 }
 
+func (q *queue) len(n int) {
+	*q = (*q)[:n]
+}
+
 type formula queue
 
-func (f formula) validate(r Getter) (Evaluator, error) {
-	var q formula
+func (f formula) validate() (Evaluator, error) {
+	var p int
 	for _, t := range f {
-		switch t.(type) {
-		case unary:
-			t = unary('+')
+		switch v := t.(type) {
+		case decimal, number, variable:
+			p++
 		case binary:
-			t = binary('*')
-		case decimal:
-			t = decimal(1)
-		case number:
-			t = number(1)
+			p--
+		case unary:
 		case function:
-		case variable:
-		default:
-			return nil, ErrIllegalToken
+			p -= strings.Count(string(v), "'")
+			p++
 		}
-		q = append(q, t)
 	}
-	if len(q) == 0 {
+	if p != 1 {
 		return nil, ErrFewOperands
-	}
-	v, err := q.Evaluate(r)
-	if err != nil {
-		return nil, err
-	}
-	if v.Float64() != 1 {
-		return nil, ErrIllegalToken
 	}
 	return f, nil
 }
@@ -168,17 +158,19 @@ func (m Bind) Get(n string) (v interface{}, ok bool) {
 }
 
 func New(e string) (Evaluator, error) {
-	m := Bind{}
 	s := scanner.Scanner{}
 	s.Init(strings.NewReader(e))
 	var p, q queue
-	var d, b []int
 	var u, f int
-	var t rune = scanner.Comment
+	var a []int
+	var t rune
 	var w string
 	for {
 		switch t {
+		case 0:
+			f--
 		case scanner.Comment:
+			u--
 		case scanner.Int:
 			v, err := strconv.ParseInt(w, 0, 64)
 			if err != nil {
@@ -195,13 +187,11 @@ func New(e string) (Evaluator, error) {
 			u++
 			t = s.Scan()
 			if t == '(' {
-				d = append(d, len(q))
-				b = append(b, 0)
 				p.push(function(w))
 				f++
+				a = append(a, 0)
 			} else {
 				q.push(variable(w))
-				m[w] = 1
 			}
 			w = s.TokenText()
 			continue
@@ -223,7 +213,7 @@ func New(e string) (Evaluator, error) {
 				n++
 				break
 			}
-			p = p[:n]
+			p.len(n)
 			if u == 1 {
 				switch t {
 				case '+', '-':
@@ -257,9 +247,9 @@ func New(e string) (Evaluator, error) {
 				}
 				break
 			}
-			p = p[:n]
+			p.len(n)
 			u = 0
-			b[f-1]++
+			a[f]++
 		case '(':
 			p.push(bracket(t))
 			u = 0
@@ -282,25 +272,14 @@ func New(e string) (Evaluator, error) {
 			}
 			if n > 0 {
 				if v, ok := p[n-1].(function); ok {
-					f--
-					if d[f] < len(q) {
-						b[f]++
-					}
-					o := make([]reflect.Type, b[f])
-					for i := range o {
-						o[i] = reflect.TypeOf(0)
-					}
-					m[string(v)] = reflect.MakeFunc(reflect.FuncOf(o, []reflect.Type{reflect.TypeOf(0)}, false),
-						func(i []reflect.Value) []reflect.Value {
-							return []reflect.Value{reflect.ValueOf(1)}
-						}).Interface()
-					d = d[:f]
-					b = b[:f]
+					v += function(strings.Repeat("'", a[f]+u-1))
 					q.push(v)
 					n--
+					a = a[:f]
+					f--
 				}
 			}
-			p = p[:n]
+			p.len(n)
 		case scanner.EOF:
 			n := len(p)
 			for n > 0 {
@@ -314,7 +293,7 @@ func New(e string) (Evaluator, error) {
 					return nil, ErrIllegalToken
 				}
 			}
-			return formula(q).validate(m)
+			return formula(q).validate()
 		default:
 			return nil, ErrIllegalToken
 		}
