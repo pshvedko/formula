@@ -3,7 +3,6 @@ package formula
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 	"text/scanner"
@@ -265,38 +264,36 @@ type Token struct {
 	Value string `json:"value,omitempty"`
 }
 
-func (t Token) tokenize() token {
+func (t Token) tokenize() (token, error) {
 	switch t.Type {
 	case "decimal":
 		v, err := strconv.ParseInt(t.Value, 10, 64)
 		if err != nil {
-			return nil
+			return nil, err
 		}
-		return decimal(v)
+		return decimal(v), nil
 	case "number":
 		v, err := strconv.ParseFloat(t.Value, 64)
 		if err != nil {
-			return nil
+			return nil, err
 		}
-		return number(v)
+		return number(v), nil
 	case "function":
-		return function(t.Value)
+		return function(t.Value), nil
 	case "variable":
-		return variable(t.Value)
+		return variable(t.Value), nil
 	case "unary":
 		switch t.Value[0] {
 		case '+', '-':
-			return unary(t.Value[0])
+			return unary(t.Value[0]), nil
 		}
 	case "binary":
 		switch t.Value[0] {
 		case '+', '-', '*', '/':
-			return binary(t.Value[0])
+			return binary(t.Value[0]), nil
 		}
-	default:
 	}
-	panic(t)
-	return nil
+	return nil, ErrIllegalToken
 }
 
 func UnmarshalJSON(b []byte) (Formula, error) {
@@ -307,9 +304,9 @@ func UnmarshalJSON(b []byte) (Formula, error) {
 	}
 	var q queue
 	for _, j := range t {
-		v := j.tokenize()
+		v, err := j.tokenize()
 		if v == nil {
-			return nil, io.EOF
+			return nil, err
 		}
 		q = append(q, v)
 	}
