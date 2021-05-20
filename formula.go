@@ -79,7 +79,7 @@ func (f Formula) validate() (Formula, error) {
 		}
 	}
 	if p != 1 {
-		return nil, ErrFewOperands
+		return nil, fmt.Errorf("%v p=%d", f, p)
 	}
 	return f, nil
 }
@@ -124,7 +124,7 @@ func New(e string) (Formula, error) {
 	for {
 		switch t {
 		case 0:
-			f--
+			a = append(a, 0)
 		case scanner.Comment:
 			u--
 		case scanner.Int:
@@ -204,8 +204,11 @@ func New(e string) (Formula, error) {
 				break
 			}
 			p.len(n)
-			u = 0
+			if a[f] == 0 {
+				a[f]++
+			}
 			a[f]++
+			u = 0
 		case '(':
 			p.push(bracket(t))
 			u = 0
@@ -228,7 +231,10 @@ func New(e string) (Formula, error) {
 			}
 			if n > 0 {
 				if v, ok := p[n-1].(function); ok {
-					v += function(strings.Repeat("'", a[f]+u-1))
+					if a[f] == 0 && u > 1 {
+						a[f]++
+					}
+					v += function(strings.Repeat("'", a[f]))
 					q.push(v)
 					n--
 					a = a[:f]

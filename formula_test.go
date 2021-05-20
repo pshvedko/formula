@@ -25,73 +25,101 @@ func TestNew(t *testing.T) {
 			name: "Ok",
 			args: args{e: "1"},
 			want: Formula{decimal(1)},
-		},
-		{
+		}, {
 			name: "Ok",
 			args: args{e: "1+1"},
 			want: Formula{decimal(1), decimal(1), binary('+')},
-		},
-		{
+		}, {
+			name: "Ok",
+			args: args{e: "-1"},
+			want: Formula{decimal(1), unary('-')},
+		}, {
+			name: "Ok",
+			args: args{e: "-(1)"},
+			want: Formula{decimal(1), unary('-')},
+		}, {
+			name: "Ok",
+			args: args{e: "A(B())"},
+			want: Formula{function("B"), function("A'")},
+		}, {
+			name: "Ok",
+			args: args{e: "A()"},
+			want: Formula{function("A")},
+		}, {
+			name: "Ok",
+			args: args{e: "-A()"},
+			want: Formula{function("A"), unary('-')},
+		}, {
+			name: "Ok",
+			args: args{e: "-A(1,-1)"},
+			want: Formula{decimal(1), decimal(1), unary('-'), function("A''"), unary('-')},
+		}, {
+			name: "Ok",
+			args: args{e: "A(B(C()))"},
+			want: Formula{function("C"), function("B'"), function("A'")},
+		}, {
+			name: "Ok",
+			args: args{e: "A(B(),C())"},
+			want: Formula{function("B"), function("C"), function("A''")},
+		}, {
+			name: "Ok",
+			args: args{e: "A(B(),C())+D()"},
+			want: Formula{function("B"), function("C"), function("A''"), function("D"), binary('+')},
+		}, {
+			name: "Ok",
+			args: args{e: "A(B(),C(D()))"},
+			want: Formula{function("B"), function("D"), function("C'"), function("A''")},
+		}, {
 			name:    "Empty",
 			args:    args{},
 			want:    nil,
 			wantErr: true,
-		},
-		{
+		}, {
 			name:    "Empty",
 			args:    args{"+"},
 			want:    nil,
 			wantErr: true,
-		},
-		{
+		}, {
 			name:    "Few",
 			args:    args{"1*"},
 			want:    nil,
 			wantErr: true,
-		},
-		{
+		}, {
 			name:    "Few",
 			args:    args{"(1+2/3)*"},
 			want:    nil,
 			wantErr: true,
-		},
-		{
+		}, {
 			name:    "Few",
-			args:    args{"Pow(,)"},
+			args:    args{"F(,)"},
 			want:    nil,
 			wantErr: true,
-		},
-		//{
-		//	name:    "Few",
-		//	args:    args{"Pow(2,)"},
-		//	want:    nil,
-		//	wantErr: true,
-		//},
-		//{
-		//	name:    "Few",
-		//	args:    args{"Pow((2,))"},
-		//	want:    nil,
-		//	wantErr: true,
-		//},
-		//{
-		//	name:    "Few",
-		//	args:    args{"1*Pow(2,,1+Pi())"},
-		//	want:    nil,
-		//	wantErr: true,
-		//},
-		//{
-		//	name:    "Few",
-		//	args:    args{"1*Pow(2,2+)"},
-		//	want:    nil,
-		//	wantErr: true,
-		//},
-		//{
-		//	name:    "Few",
-		//	args:    args{"(1+2)+x/"},
-		//	want:    nil,
-		//	wantErr: true,
-		//},
-		{
+		}, {
+			name:    "Few",
+			args:    args{"F(2,)"},
+			want:    nil,
+			wantErr: true,
+		}, {
+			name:    "Few",
+			args:    args{"F((2,))"},
+			want:    nil,
+			wantErr: true,
+		}, {
+			name:    "Few",
+			args:    args{"1*F(2,,1+F())"},
+			want:    nil,
+			wantErr: true,
+		}, {
+			name:    "Few",
+			args:    args{"1*F(2,2+)"},
+			want:    nil,
+			wantErr: true,
+		}, {
+			name:    "Few",
+			args:    args{"(1+2)+x/"},
+			want:    nil,
+			wantErr: true,
+		}, {
 			name:    "Comma",
 			args:    args{","},
 			want:    nil,
@@ -101,8 +129,7 @@ func TestNew(t *testing.T) {
 			args:    args{"1,2"},
 			want:    nil,
 			wantErr: true,
-		},
-		{
+		}, {
 			name:    "Comma",
 			args:    args{"(1,2)"},
 			want:    nil,
@@ -118,11 +145,11 @@ func TestNew(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := New(tt.args.e)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("New() got = %v error = %v, wantErr %v", got, err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() got = %+#v, want %+#v", got, tt.want)
+				t.Errorf("New() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
