@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"math/rand"
 	"reflect"
 	"testing"
 )
@@ -156,19 +155,22 @@ func TestNew(t *testing.T) {
 }
 
 func ExampleNew() {
-	f, err := New("-1.5+Sin(2*Pi*x)/2+2+0*Rand()+0*Pow(1,2)")
+	f, err := New("1+Sin(2*Pi*x)/2")
 	if err != nil {
 		log.Fatal(err)
 	}
-	b, err := json.Marshal(f)
+	var b []byte
+	b, err = json.Marshal(f)
 	if err != nil {
 		log.Fatal(err)
 	}
-	j, err := UnmarshalJSON(b)
+	var j Formula
+	err = json.Unmarshal(b, &j)
 	if err != nil {
 		log.Fatal(err)
 	}
-	v, err := j.Evaluate(Bind{"Pow''": math.Pow, "Sin'": math.Sin, "Rand": rand.Float64, "Pi": math.Pi, "x": .25})
+	var v interface{}
+	v, err = j.Evaluate(Variable{"Sin'": math.Sin, "Pi": math.Pi, "x": .25})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -176,7 +178,7 @@ func ExampleNew() {
 	fmt.Println(j)
 	fmt.Println(v)
 	// Output:
-	// [1.5 - 2 Pi * x * Sin' 2 / + 2 + 0 Rand * + 0 1 2 Pow'' * +]
-	// [1.5 - 2 Pi * x * Sin' 2 / + 2 + 0 Rand * + 0 1 2 Pow'' * +]
-	// 1
+	// [1 2 Pi * x * Sin' 2 / +]
+	// [1 2 Pi * x * Sin' 2 / +]
+	// 1.5
 }

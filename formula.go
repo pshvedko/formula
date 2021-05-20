@@ -64,9 +64,9 @@ func (q *queue) len(n int) {
 
 type Formula queue
 
-func (f Formula) validate() (Formula, error) {
+func (q queue) validate() bool {
 	var p int
-	for _, t := range f {
+	for _, t := range q {
 		switch v := t.(type) {
 		case decimal, number, variable:
 			p++
@@ -76,12 +76,11 @@ func (f Formula) validate() (Formula, error) {
 		case function:
 			p -= strings.Count(string(v), "'")
 			p++
+		default:
+			return false
 		}
 	}
-	if p != 1 {
-		return nil, fmt.Errorf("%v p=%d", f, p)
-	}
-	return f, nil
+	return p == 1
 }
 
 // Evaluate calculating the value of an expression using the
@@ -106,9 +105,9 @@ func (f Formula) Evaluate(r Getter) (interface{}, error) {
 	return nil, ErrIllegalToken
 }
 
-type Bind map[string]interface{}
+type Variable map[string]interface{}
 
-func (m Bind) Get(n string) (v interface{}, ok bool) {
+func (m Variable) Get(n string) (v interface{}, ok bool) {
 	v, ok = m[n]
 	return
 }
@@ -255,7 +254,10 @@ func New(e string) (Formula, error) {
 					return nil, ErrIllegalToken
 				}
 			}
-			return Formula(q).validate()
+			if q.validate() {
+				return Formula(q), nil
+			}
+			return nil, ErrFewOperands
 		default:
 			return nil, ErrIllegalToken
 		}
@@ -302,19 +304,23 @@ func (t Token) tokenize() (token, error) {
 	return nil, ErrIllegalToken
 }
 
-func UnmarshalJSON(b []byte) (Formula, error) {
+func (f *Formula) UnmarshalJSON(b []byte) error {
 	var t []Token
 	err := json.Unmarshal(b, &t)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	var q queue
 	for _, j := range t {
 		v, err := j.tokenize()
 		if v == nil {
-			return nil, err
+			return err
 		}
 		q = append(q, v)
 	}
-	return Formula(q).validate()
+	if q != nil && q.validate() {
+		*f = Formula(q)
+		return nil
+	}
+	return ErrFewOperands
 }
