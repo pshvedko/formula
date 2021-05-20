@@ -27,13 +27,13 @@ func (t function) evaluate(e Getter, q stacker) (token, error) {
 				return nil, ErrFewOperands
 			}
 			switch b := v.(type) {
-			case Valuer:
+			case decimal, number:
 				switch a.Kind() {
 				case reflect.Float32, reflect.Float64:
-					p[i] = reflect.ValueOf(b.Float64()).Convert(a)
+					p[i] = reflect.ValueOf(b).Convert(a)
 					continue
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-					p[i] = reflect.ValueOf(b.Int64()).Convert(a)
+					p[i] = reflect.ValueOf(b).Convert(a)
 					continue
 				}
 			}
@@ -48,10 +48,6 @@ func (t function) evaluate(e Getter, q stacker) (token, error) {
 		}
 	}
 	return nil, fmt.Errorf("FIXME2 <%v> <%v> <%v> ", r, r.Kind() == reflect.Func, r.Type()) // FIXME
-}
-
-func (t function) value() (Valuer, error) {
-	return nil, fmt.Errorf("FIXME1") // FIXME
 }
 
 func (t function) MarshalJSON() ([]byte, error) {

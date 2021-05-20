@@ -32,10 +32,6 @@ func (t variable) evaluate(f Getter, _ stacker) (token, error) {
 	}
 }
 
-func (t variable) value() (Valuer, error) {
-	return nil, fmt.Errorf("FIXME45") // FIXME
-}
-
 func (t variable) MarshalJSON() ([]byte, error) {
 	return json.Marshal(Token{Type: "variable", Value: t.String()})
 }

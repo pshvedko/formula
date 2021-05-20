@@ -34,10 +34,6 @@ func (t binary) evaluate(_ Getter, q stacker) (token, error) {
 	return nil, fmt.Errorf("FIXME5") // FIXME
 }
 
-func (t binary) value() (Valuer, error) {
-	return nil, fmt.Errorf("FIXME6") // FIXME
-}
-
 func (t binary) less(a rune) bool {
 	switch t {
 	case '*', '/':

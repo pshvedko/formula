@@ -61,10 +61,6 @@ func (t decimal) evaluate(Getter, stacker) (token, error) {
 	return t, nil
 }
 
-func (t decimal) value() (Valuer, error) {
-	return t, nil
-}
-
 func (t decimal) Float64() float64 {
 	return float64(t)
 }

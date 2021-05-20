@@ -22,17 +22,8 @@ var (
 	ErrDivisionByZero = fmt.Errorf("division by zero")
 )
 
-type Evaluator interface {
-	Evaluate(r Getter) (Valuer, error)
-}
-
 type Getter interface {
 	Get(string) (interface{}, bool)
-}
-
-type Valuer interface {
-	Float64() float64
-	Int64() int64
 }
 
 type stacker interface {
@@ -42,46 +33,6 @@ type stacker interface {
 
 type token interface {
 	evaluate(Getter, stacker) (token, error)
-	value() (Valuer, error)
-}
-
-type Token struct {
-	Type  string `json:"type,omitempty"`
-	Value string `json:"value,omitempty"`
-}
-
-func (t Token) tokenize() token {
-	switch t.Type {
-	case "decimal":
-		v, err := strconv.ParseInt(t.Value, 10, 64)
-		if err != nil {
-			return nil
-		}
-		return decimal(v)
-	case "number":
-		v, err := strconv.ParseFloat(t.Value, 64)
-		if err != nil {
-			return nil
-		}
-		return number(v)
-	case "function":
-		return function(t.Value)
-	case "variable":
-		return variable(t.Value)
-	case "unary":
-		switch t.Value[0] {
-		case '+', '-':
-			return unary(t.Value[0])
-		}
-	case "binary":
-		switch t.Value[0] {
-		case '+', '-', '*', '/':
-			return binary(t.Value[0])
-		}
-	default:
-	}
-	panic(t)
-	return nil
 }
 
 type calculator interface {
@@ -112,9 +63,9 @@ func (q *queue) len(n int) {
 	*q = (*q)[:n]
 }
 
-type formula queue
+type Formula queue
 
-func (f formula) validate() (Evaluator, error) {
+func (f Formula) validate() (Formula, error) {
 	var p int
 	for _, t := range f {
 		switch v := t.(type) {
@@ -134,7 +85,9 @@ func (f formula) validate() (Evaluator, error) {
 	return f, nil
 }
 
-func (f formula) Evaluate(r Getter) (Valuer, error) {
+// Evaluate calculating the value of an expression using the
+// Dijkstra Shunting Yard algorithm
+func (f Formula) Evaluate(r Getter) (interface{}, error) {
 	var q queue
 	for _, t := range f {
 		v, err := t.evaluate(r, &q)
@@ -147,7 +100,11 @@ func (f formula) Evaluate(r Getter) (Valuer, error) {
 	if !ok {
 		return nil, ErrFewOperands
 	}
-	return v.value()
+	switch v.(type) {
+	case decimal, number:
+		return v, nil
+	}
+	return nil, ErrIllegalToken
 }
 
 type Bind map[string]interface{}
@@ -157,7 +114,7 @@ func (m Bind) Get(n string) (v interface{}, ok bool) {
 	return
 }
 
-func New(e string) (Evaluator, error) {
+func New(e string) (Formula, error) {
 	s := scanner.Scanner{}
 	s.Init(strings.NewReader(e))
 	var p, q queue
@@ -293,7 +250,7 @@ func New(e string) (Evaluator, error) {
 					return nil, ErrIllegalToken
 				}
 			}
-			return formula(q).validate()
+			return Formula(q).validate()
 		default:
 			return nil, ErrIllegalToken
 		}
@@ -303,7 +260,46 @@ func New(e string) (Evaluator, error) {
 	}
 }
 
-func UnmarshalJSON(b []byte) (Evaluator, error) {
+type Token struct {
+	Type  string `json:"type,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+
+func (t Token) tokenize() token {
+	switch t.Type {
+	case "decimal":
+		v, err := strconv.ParseInt(t.Value, 10, 64)
+		if err != nil {
+			return nil
+		}
+		return decimal(v)
+	case "number":
+		v, err := strconv.ParseFloat(t.Value, 64)
+		if err != nil {
+			return nil
+		}
+		return number(v)
+	case "function":
+		return function(t.Value)
+	case "variable":
+		return variable(t.Value)
+	case "unary":
+		switch t.Value[0] {
+		case '+', '-':
+			return unary(t.Value[0])
+		}
+	case "binary":
+		switch t.Value[0] {
+		case '+', '-', '*', '/':
+			return binary(t.Value[0])
+		}
+	default:
+	}
+	panic(t)
+	return nil
+}
+
+func UnmarshalJSON(b []byte) (Formula, error) {
 	var t []Token
 	err := json.Unmarshal(b, &t)
 	if err != nil {
@@ -317,5 +313,5 @@ func UnmarshalJSON(b []byte) (Evaluator, error) {
 		}
 		q = append(q, v)
 	}
-	return formula(q), nil
+	return Formula(q).validate()
 }

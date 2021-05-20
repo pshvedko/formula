@@ -17,19 +17,19 @@ func TestNew(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    Evaluator
+		want    Formula
 		wantErr bool
 	}{
 		// TODO: Add test cases.
 		{
 			name: "Ok",
 			args: args{e: "1"},
-			want: formula{decimal(1)},
+			want: Formula{decimal(1)},
 		},
 		{
 			name: "Ok",
 			args: args{e: "1+1"},
-			want: formula{decimal(1), decimal(1), binary('+')},
+			want: Formula{decimal(1), decimal(1), binary('+')},
 		},
 		{
 			name:    "Empty",

@@ -61,10 +61,6 @@ func (t number) evaluate(Getter, stacker) (token, error) {
 	return t, nil
 }
 
-func (t number) value() (Valuer, error) {
-	return t, nil
-}
-
 func (t number) Float64() float64 {
 	return float64(t)
 }

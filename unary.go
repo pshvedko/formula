@@ -24,10 +24,6 @@ func (t unary) evaluate(_ Getter, q stacker) (token, error) {
 	return nil, fmt.Errorf("FIXME33") // FIXME
 }
 
-func (t unary) value() (Valuer, error) {
-	return nil, fmt.Errorf("FIXME34") // FIXME
-}
-
 func (t unary) String() string {
 	return string(t)
 }
