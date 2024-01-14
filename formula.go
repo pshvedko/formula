@@ -152,6 +152,9 @@ func New(e string) (Formula, error) {
 			}
 			w = s.TokenText()
 			continue
+		case ':':
+			t = '/'
+			fallthrough
 		case '+', '-', '/', '*':
 			n := len(p)
 			for u > 1 && n > 0 {
@@ -180,6 +183,9 @@ func New(e string) (Formula, error) {
 				}
 			} else {
 				switch t {
+				case ':':
+					t = '/'
+					fallthrough
 				case '+', '-', '/', '*':
 					p.push(binary(t))
 				default:

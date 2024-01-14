@@ -222,3 +222,46 @@ func BenchmarkFormula_Evaluate(b *testing.B) {
 		b.Errorf("wrong result %v", result)
 	}
 }
+
+func TestFormula_Evaluate(t *testing.T) {
+	type args struct {
+		r Getter
+	}
+	tests := []struct {
+		name    string
+		f       string
+		args    args
+		want    interface{}
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name:    "",
+			f:       "36:3*(8-6)/6",
+			args:    args{},
+			want:    int64(4),
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Calculate(t, tt.f, tt.args.r)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Calculate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Calculate() got = %v::%T, want %v::%T", got, got, tt.want, tt.want)
+			}
+		})
+	}
+}
+
+func Calculate(t *testing.T, e string, g Getter) (interface{}, error) {
+	t.Helper()
+	f, err := New(e)
+	if err != nil {
+		return nil, err
+	}
+	return f.Evaluate(g)
+}
